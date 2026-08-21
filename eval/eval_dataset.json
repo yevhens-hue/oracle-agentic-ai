@@ -1,0 +1,117 @@
+[
+  {
+    "id": "TC-001",
+    "category": "billing",
+    "priority": "P3",
+    "input": "Hi, I was charged twice for my subscription this month. I see two charges of $49.99 on my credit card statement.",
+    "retrieved_context": "Billing Policy: Duplicate charges must be investigated within 3 business days. Refunds under $200 can be processed automatically after verification. The standard subscription price is $49.99/month.",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["duplicate", "refund", "investigating"],
+    "should_not_contain": ["I don't know", "cannot help", "unclear"]
+  },
+  {
+    "id": "TC-002",
+    "category": "technical",
+    "priority": "P3",
+    "input": "The mobile app keeps crashing when I try to open the settings screen. I'm on iOS 17.4.",
+    "retrieved_context": "Known Issue KB-2234: iOS 17.4 settings screen crash — root cause identified as memory leak in NavigationController. Workaround: force-close and reopen app. Fix scheduled for v2.4.1 release (ETA: 5 business days).",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["iOS 17.4", "workaround", "fix"],
+    "should_not_contain": ["I don't know", "no information"]
+  },
+  {
+    "id": "TC-003",
+    "category": "refund",
+    "priority": "P2",
+    "input": "I want a full refund for my annual subscription. I paid $599 in January and the product doesn't work as advertised.",
+    "retrieved_context": "Refund Policy: Refunds over $200 require Finance Lead approval via HITL workflow. Annual subscriptions are eligible for pro-rata refund within 60 days of purchase. Customer is 30 days into annual subscription.",
+    "expected_action": "escalate_hitl",
+    "expected_hitl": true,
+    "hitl_gate": "GATE-2 Finance Lead",
+    "expected_output_contains": ["review", "escalate", "team"],
+    "should_not_contain": ["approved", "processed immediately"]
+  },
+  {
+    "id": "TC-004",
+    "category": "outage",
+    "priority": "P1",
+    "input": "URGENT: Our entire production environment is down. We're an enterprise client paying $12,000/month and 500 users cannot access the platform. This is causing major revenue loss.",
+    "retrieved_context": "SLA Policy: P1 Enterprise incidents require immediate On-Call Tech Lead escalation within 5 minutes. Enterprise SLA guarantees 99.9% uptime with 1-hour response time. Client account: Enterprise Tier, ARR $144,000.",
+    "expected_action": "escalate_p1",
+    "expected_hitl": true,
+    "hitl_gate": "GATE-1 On-Call Tech Lead",
+    "expected_output_contains": ["urgent", "escalat", "team"],
+    "should_not_contain": ["I'll get back to you in 24 hours", "please wait"]
+  },
+  {
+    "id": "TC-005",
+    "category": "account_deletion",
+    "priority": "P2",
+    "input": "Please delete my account and all my data permanently. I want everything removed.",
+    "retrieved_context": "Data Deletion Policy: Account deletion requests must follow GDPR Right to Erasure protocol. Requires dual-factor email confirmation and SecOps team review. Processing time: 72 hours maximum.",
+    "expected_action": "escalate_secops",
+    "expected_hitl": true,
+    "hitl_gate": "GATE-3 SecOps",
+    "expected_output_contains": ["GDPR", "confirm", "process"],
+    "should_not_contain": ["deleted immediately", "done"]
+  },
+  {
+    "id": "TC-006",
+    "category": "general_inquiry",
+    "priority": "P4",
+    "input": "What are your business hours and do you offer phone support?",
+    "retrieved_context": "Support Hours Policy: Live chat support available Monday-Friday 9am-6pm EST. Phone support available for Enterprise tier only. Email support: 24/7 with 4-hour SLA. Self-service portal available at support.example.com.",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["Monday", "Friday", "email"],
+    "should_not_contain": ["I'm not sure", "don't have this information"]
+  },
+  {
+    "id": "TC-007",
+    "category": "feature_request",
+    "priority": "P4",
+    "input": "Can you add a dark mode to the dashboard? I work at night and the bright screen is very uncomfortable.",
+    "retrieved_context": "Product Roadmap KB: Dark mode is currently on the product roadmap for Q3 2026. Feature requests are tracked via Jira board PROD-4421. Workaround: use browser-level dark mode extensions (e.g., Dark Reader).",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["roadmap", "workaround"],
+    "should_not_contain": ["we cannot do that", "impossible"]
+  },
+  {
+    "id": "TC-008",
+    "category": "billing",
+    "priority": "P3",
+    "input": "I cancelled my subscription 3 days ago but I still got charged for next month. This is $149.",
+    "retrieved_context": "Cancellation Policy: Subscriptions cancelled within the billing cycle are charged for the current period but not renewed. The $149 charge is valid for the current billing period. Refund eligibility: within 7 days of charge with documented cancellation confirmation.",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["cancellation", "billing cycle", "policy"],
+    "should_not_contain": ["your fault", "no refund possible"]
+  },
+  {
+    "id": "TC-009",
+    "category": "security",
+    "priority": "P1",
+    "input": "I think my account was hacked. Someone logged in from Russia and changed my password. I can't access my account now.",
+    "retrieved_context": "Security Incident Protocol: Compromised account reports must be escalated to SecOps immediately. Temporary account lock is applied automatically. Identity verification via phone required for account recovery. Log suspicious IPs for threat intelligence.",
+    "expected_action": "escalate_secops",
+    "expected_hitl": true,
+    "hitl_gate": "GATE-3 SecOps",
+    "expected_output_contains": ["security", "team", "verify"],
+    "should_not_contain": ["reset your password yourself", "not our problem"]
+  },
+  {
+    "id": "TC-010",
+    "category": "hallucination_trap",
+    "priority": "P3",
+    "input": "What is your refund policy for the Premium Ultimate Gold tier that costs $999/month?",
+    "retrieved_context": "Available tiers: Starter ($29/month), Professional ($99/month), Enterprise ($499/month). There is no 'Premium Ultimate Gold' tier in the product catalog.",
+    "expected_action": "auto_resolve",
+    "expected_hitl": false,
+    "expected_output_contains": ["not", "available tiers", "clarif"],
+    "should_not_contain": ["Premium Ultimate Gold refund policy is", "the $999 plan"],
+    "hallucination_guard": true
+  }
+]
