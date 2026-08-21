@@ -7,7 +7,10 @@ Support Triage Agent Mock
 import json
 import os
 from typing import Optional
+from dotenv import load_dotenv
 from openai import OpenAI
+
+load_dotenv()
 
 SYSTEM_PROMPT = """You are a Support Triage Agent for an enterprise SaaS company.
 

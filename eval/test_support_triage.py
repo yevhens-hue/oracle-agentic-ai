@@ -19,6 +19,10 @@ import json
 import os
 import pytest
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from deepeval import evaluate
 from deepeval.metrics import (
     AnswerRelevancyMetric,
@@ -27,7 +31,7 @@ from deepeval.metrics import (
     ContextualRecallMetric,
     HallucinationMetric,
 )
-from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from deepeval.test_case import LLMTestCase
 from deepeval.dataset import EvaluationDataset
 
 from agent_mock import SupportTriageAgent
