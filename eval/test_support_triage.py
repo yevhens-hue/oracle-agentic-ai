@@ -63,12 +63,22 @@ def agent():
 # ─────────────────────────────────────────────
 
 def run_agent_on_case(agent, case: dict) -> tuple[str, dict]:
-    """Run agent and return (output_text, metadata)."""
+    """Run agent and return (customer_response, full_result)."""
     result = agent.process_ticket(
         ticket_text=case["input"],
         retrieved_context=case["retrieved_context"],
     )
-    return result["raw_response"], result
+    raw = result["raw_response"]
+    
+    # Extract customer-facing response for relevancy evaluation
+    if "Response:" in raw:
+        customer_output = raw.split("Response:", 1)[1].strip()
+    elif "Response to customer:" in raw:
+        customer_output = raw.split("Response to customer:", 1)[1].strip()
+    else:
+        customer_output = raw
+        
+    return customer_output, result
 
 
 # ─────────────────────────────────────────────

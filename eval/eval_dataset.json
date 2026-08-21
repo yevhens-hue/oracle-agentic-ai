@@ -26,7 +26,7 @@
     "category": "refund",
     "priority": "P2",
     "input": "I want a full refund for my annual subscription. I paid $599 in January and the product doesn't work as advertised.",
-    "retrieved_context": "Refund Policy: Refunds over $200 require Finance Lead approval via HITL workflow. Annual subscriptions are eligible for pro-rata refund within 60 days of purchase. Customer is 30 days into annual subscription.",
+    "retrieved_context": "Refund Policy: Refunds exceeding $200 require Finance Lead approval before processing. Annual subscriptions are eligible for pro-rata refund within 60 days of purchase (Customer is at day 30). For refunds over $200, support agents must escalate the ticket to the Finance Lead for review and notify the customer that review is underway.",
     "expected_action": "escalate_hitl",
     "expected_hitl": true,
     "hitl_gate": "GATE-2 Finance Lead",
@@ -62,10 +62,10 @@
     "category": "general_inquiry",
     "priority": "P4",
     "input": "What are your business hours and do you offer phone support?",
-    "retrieved_context": "Support Hours Policy: Live chat support available Monday-Friday 9am-6pm EST. Phone support available for Enterprise tier only. Email support: 24/7 with 4-hour SLA. Self-service portal available at support.example.com.",
+    "retrieved_context": "Company Business Hours: Monday through Friday, 9:00 AM to 6:00 PM EST. Support Channels: Live chat is available during standard business hours (Mon-Fri 9am-6pm EST). Phone support is provided exclusively for Enterprise plan customers. Email support is available 24/7 with a 4-hour SLA. Self-service help center: support.example.com.",
     "expected_action": "auto_resolve",
     "expected_hitl": false,
-    "expected_output_contains": ["Monday", "Friday", "email"],
+    "expected_output_contains": ["Monday", "Friday", "Phone support", "Enterprise", "email"],
     "should_not_contain": ["I'm not sure", "don't have this information"]
   },
   {
