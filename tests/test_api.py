@@ -158,3 +158,31 @@ def test_fabric_vector_rag_endpoint():
     assert data["total_matches"] >= 1
     top_keys = [item["fabric_key"] for item in data["results"]]
     assert "blackout_termo" in top_keys or "plisse_trevira" in top_keys
+
+
+def test_agent_trigger_exit_intent():
+    """Verify POST /api/v1/agent/trigger for Exit-Intent behavior."""
+    payload = {
+        "trigger_type": "exit_intent",
+        "page_url": "https://zhaluzi-rolety-dnipro.vercel.app/catalog"
+    }
+    response = client.post("/api/v1/agent/trigger", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["should_activate"] is True
+    assert data["trigger_type"] == "exit_intent"
+    assert "замірник" in data["proactive_message"] or "замерщик" in data["proactive_message"]
+
+
+def test_agent_trigger_keyword_discount():
+    """Verify POST /api/v1/agent/trigger for Keyword Intent (скидка)."""
+    payload = {
+        "trigger_type": "keyword_intent",
+        "keyword": "какие есть акти и скидки?"
+    }
+    response = client.post("/api/v1/agent/trigger", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["should_activate"] is True
+    assert data["intent_type"] == "DISCOUNT_REQUEST"
+    assert "акції" in data["proactive_message"] or "акции" in data["proactive_message"] or "знижки" in data["proactive_message"]

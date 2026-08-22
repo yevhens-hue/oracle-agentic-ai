@@ -88,3 +88,19 @@ class FabricSearchResponse(BaseModel):
     query: str
     total_matches: int
     results: List[FabricSearchResultItem]
+
+
+class TriggerRequest(BaseModel):
+    trigger_type: str = Field(..., description="Trigger event type: exit_intent, time_on_page, cart_hesitation, or keyword_intent", json_schema_extra={"example": "exit_intent"})
+    user_action: Optional[str] = Field(default=None, description="Optional user action description")
+    keyword: Optional[str] = Field(default=None, description="Optional search/input keyword")
+    page_url: Optional[str] = Field(default=None, description="Current page URL")
+
+
+class TriggerResponse(BaseModel):
+    should_activate: bool = True
+    trigger_type: str
+    intent_type: str
+    proactive_message: str
+    suggested_actions: List[str]
+    priority: str

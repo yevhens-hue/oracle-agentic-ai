@@ -15,6 +15,7 @@ if str(WORKSPACE_ROOT) not in sys.path:
 from eval.agent_zhaluzi import run_zhaluzi_agent, FABRIC_CATALOG, COVERAGE_CITIES, execute_tool
 from eval.fabric_vector_rag import vector_search_fabrics
 from api.lead_engine import calculate_intent_score
+from api.trigger_engine import evaluate_trigger
 from api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -26,7 +27,9 @@ from api.schemas import (
     LeadResponse,
     FabricSearchRequest,
     FabricSearchResponse,
-    FabricSearchResultItem
+    FabricSearchResultItem,
+    TriggerRequest,
+    TriggerResponse
 )
 
 app = FastAPI(
@@ -193,4 +196,27 @@ def search_fabrics_endpoint(payload: FabricSearchRequest):
         query=payload.query,
         total_matches=len(items),
         results=items
+    )
+
+
+@app.post("/api/v1/agent/trigger", response_model=TriggerResponse, tags=["Smart Agent Triggers"])
+def evaluate_trigger_endpoint(payload: TriggerRequest):
+    """
+    Evaluates behavioral events (Exit-Intent, Time-on-Page, Cart Hesitation, Keyword Intent)
+    and returns proactive agent activation payloads.
+    """
+    trigger_data = evaluate_trigger(
+        trigger_type=payload.trigger_type,
+        user_action=payload.user_action,
+        keyword=payload.keyword,
+        page_url=payload.page_url
+    )
+
+    return TriggerResponse(
+        should_activate=trigger_data.get("should_activate", True),
+        trigger_type=trigger_data.get("trigger_type", payload.trigger_type),
+        intent_type=trigger_data.get("intent_type", "GENERAL_TRIGGER"),
+        proactive_message=trigger_data.get("proactive_message", ""),
+        suggested_actions=trigger_data.get("suggested_actions", []),
+        priority=trigger_data.get("priority", "P2_MEDIUM")
     )
