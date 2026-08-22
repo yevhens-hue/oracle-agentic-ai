@@ -61,5 +61,30 @@ class LeadResponse(BaseModel):
     message: str
     lead_id: str
     phone_number: str
+    intent_score: int = 85
+    intent_level: str = "HIGH_INTENT"
     sla_minutes: int = 5
+    sla_expires_at: Optional[str] = None
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+
+class FabricSearchRequest(BaseModel):
+    query: str = Field(..., description="Semantic search query (e.g. негорючая ткань blackout спальня)", json_schema_extra={"example": "негорючая ткань blackout спальня"})
+    top_k: int = Field(default=3, description="Number of vector RAG results to return")
+
+
+class FabricSearchResultItem(BaseModel):
+    fabric_key: str
+    name: str
+    price_per_m2: float
+    min_m2: float
+    thermal_shield: bool
+    light_block_percent: int
+    fire_resistant: bool
+    relevance_score: float
+
+
+class FabricSearchResponse(BaseModel):
+    query: str
+    total_matches: int
+    results: List[FabricSearchResultItem]

@@ -123,6 +123,21 @@ TOOLS_DEFINITIONS = [
                 "required": ["phone_number"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_fabrics",
+            "description": "Семантический векторный поиск по 350+ видам тканей (Blackout, Trevira CS, Screen, День-Ночь, Негорючие)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Поисковый запрос клиента (например: негорючая ткань blackout спальня)"},
+                    "top_k": {"type": "number", "description": "Количество результатов"}
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
@@ -195,6 +210,17 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
             "city": city,
             "sla_minutes": 5,
             "lead_id": "LEAD-ZHALUZI-7712"
+        }
+
+    elif tool_name == "search_fabrics":
+        from eval.fabric_vector_rag import vector_search_fabrics
+        query = arguments.get("query", "")
+        top_k = int(arguments.get("top_k", 3))
+        results = vector_search_fabrics(query, top_k=top_k)
+        return {
+            "query": query,
+            "total_matches": len(results),
+            "results": results
         }
 
     return {"error": f"Unknown tool: {tool_name}"}

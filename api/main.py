@@ -13,6 +13,8 @@ if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
 from eval.agent_zhaluzi import run_zhaluzi_agent, FABRIC_CATALOG, COVERAGE_CITIES, execute_tool
+from eval.fabric_vector_rag import vector_search_fabrics
+from api.lead_engine import calculate_intent_score
 from api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -21,7 +23,10 @@ from api.schemas import (
     CoverageResponse,
     HealthResponse,
     LeadRequest,
-    LeadResponse
+    LeadResponse,
+    FabricSearchRequest,
+    FabricSearchResponse,
+    FabricSearchResultItem
 )
 
 app = FastAPI(
@@ -122,7 +127,7 @@ def chat_with_agent(payload: ChatRequest):
 def submit_lead_endpoint(payload: LeadRequest):
     """
     Direct Lead Generation Endpoint for website form modals & chat callback requests.
-    Enforces a 5-minute callback SLA.
+    Enforces a 5-minute callback SLA and calculates purchase intent score.
     """
     if not payload.phone_number or not payload.phone_number.strip():
         raise HTTPException(
@@ -137,10 +142,55 @@ def submit_lead_endpoint(payload: LeadRequest):
         "notes": payload.notes
     })
 
+    intent_info = calculate_intent_score(
+        query=payload.notes or "",
+        phone=payload.phone_number,
+        has_dimensions=False,
+        city=payload.city
+    )
+
     return LeadResponse(
         status=tool_res.get("status", "LEAD_SUBMITTED"),
         message=tool_res.get("message", "Заявка успішно прийнята!"),
         lead_id=tool_res.get("lead_id", "LEAD-ZHALUZI-7712"),
         phone_number=payload.phone_number,
-        sla_minutes=5
+        intent_score=intent_info["intent_score"],
+        intent_level=intent_info["intent_level"],
+        sla_minutes=5,
+        sla_expires_at=intent_info["sla_expires_at"]
+    )
+
+
+@app.post("/api/v1/fabrics/search", response_model=FabricSearchResponse, tags=["Vector RAG Search"])
+def search_fabrics_endpoint(payload: FabricSearchRequest):
+    """
+    Vector RAG Semantic Search Endpoint across 350+ fabrics.
+    Finds best matching fabrics by natural language query (e.g. 'негорючая ткань blackout спальня').
+    """
+    if not payload.query or not payload.query.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query field cannot be empty."
+        )
+
+    results = vector_search_fabrics(payload.query, top_k=payload.top_k)
+
+    items = [
+        FabricSearchResultItem(
+            fabric_key=r["fabric_key"],
+            name=r["name"],
+            price_per_m2=float(r["price_per_m2"]),
+            min_m2=float(r["min_m2"]),
+            thermal_shield=r["thermal_shield"],
+            light_block_percent=r["light_block_percent"],
+            fire_resistant=r["fire_resistant"],
+            relevance_score=r["relevance_score"]
+        )
+        for r in results
+    ]
+
+    return FabricSearchResponse(
+        query=payload.query,
+        total_matches=len(items),
+        results=items
     )

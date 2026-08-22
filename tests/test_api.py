@@ -144,3 +144,17 @@ def test_chat_phone_callback_tool():
     data = response.json()
     assert "submit_lead" in data["tools_called"]
     assert "5 минут" in data["response"] or "5 хвилин" in data["response"]
+
+
+def test_fabric_vector_rag_endpoint():
+    """Verify POST /api/v1/fabrics/search performs hybrid vector RAG lookup."""
+    payload = {
+        "query": "негорючая ткань blackout спальня",
+        "top_k": 3
+    }
+    response = client.post("/api/v1/fabrics/search", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_matches"] >= 1
+    top_keys = [item["fabric_key"] for item in data["results"]]
+    assert "blackout_termo" in top_keys or "plisse_trevira" in top_keys
