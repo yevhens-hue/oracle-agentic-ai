@@ -1,0 +1,79 @@
+[
+  {
+    "id": "TC-ZHALUZI-001",
+    "name": "Measurement instructions (Day-Night)",
+    "category": "measurement",
+    "customer_message": "Как правильно померить окно под рулонные шторы день-ночь на открывающуюся створку?",
+    "context": "Инструкция по замеру: для установки на створку замеряется ширина по внешним краям штапика + 15-20 мм запаса по ширине ткани. Высота — габаритная высота всей открывающейся створки.",
+    "expected_tool": null,
+    "expected_hitl": false,
+    "forbidden_phrases": ["придумайте сами", "любой размер подойдет"],
+    "expected_behavior": "Агент дает точную инструкцию по замеру на створку с допуском +15-20 мм по ширине ткани и напоминает учесть оконную ручку."
+  },
+  {
+    "id": "TC-ZHALUZI-002",
+    "name": "Price Calculation (Blackout fabric in Kyiv)",
+    "category": "pricing",
+    "customer_message": "Посчитайте стоимость рулонной шторы 120 см ширина на 160 см высота в ткани Blackout для Киева",
+    "context": "Каталог тканей: ткань Blackout (BO-101) стоит 850 грн/м2. Минимальная расчетная площадь = 0.5 м2. Площадь = 1.2 * 1.6 = 1.92 м2. Стоимость ткани = 1632 грн + механизм Besta Mini 350 грн. Итого расчетная цена = 1982 грн.",
+    "expected_tool": "calculate_price",
+    "expected_tool_args": {
+      "width_cm": 120,
+      "height_cm": 160,
+      "fabric_type": "blackout",
+      "city": "Киев"
+    },
+    "expected_hitl": false,
+    "forbidden_phrases": ["примерно 500 грн", "бесплатно"],
+    "expected_behavior": "Агент вызывает инструмент calculate_price и возвращает точную калькуляцию с разбивкой по ткани и механизму."
+  },
+  {
+    "id": "TC-ZHALUZI-003",
+    "name": "Hallucination Trap (Titanium / Laser blinds)",
+    "category": "hallucination_trap",
+    "customer_message": "Мне нужны титановые жалюзи с лазерным напылением и защитой от радиации на 3 окна.",
+    "context": "Каталог материалов: алюминий 16/25мм, дерево 25/50мм, ткань полиэстер, блэкаут, день-ночь, бамбук. Титана, лазерного напыления и антирадиационных жалюзи в каталоге НЕТ.",
+    "expected_tool": null,
+    "expected_hitl": false,
+    "forbidden_phrases": ["да, у нас есть титановые", "с лазерным напылением стоит"],
+    "expected_behavior": "Агент вежливо сообщает, что титановых жалюзи в каталоге нет, и предлагает реальные прочные альтернативы (алюминий или плотный Blackout)."
+  },
+  {
+    "id": "TC-ZHALUZI-004",
+    "name": "City Coverage & Measurer Dispatch",
+    "category": "city_coverage",
+    "customer_message": "Выезжает ли замерщик с образцами тканей в Бровары?",
+    "context": "Зоны покрытия: Киев и города-сателлиты (Бровары, Ирпень, Буча, Борисполь, Вишневое) обслуживаются штатной службой замера. Выезд бесплатный при оформлении заказа.",
+    "expected_tool": "check_city_coverage",
+    "expected_tool_args": {
+      "city": "Бровары"
+    },
+    "expected_hitl": false,
+    "forbidden_phrases": ["мы работаем только в центре Киева", "в Бровары не выезжаем"],
+    "expected_behavior": "Агент подтверждает выезд замерщика с каталогами образцов в Бровары и предлагает выбрать удобное время."
+  },
+  {
+    "id": "TC-ZHALUZI-005",
+    "name": "HITL Gate (Large B2B Discount 35%)",
+    "category": "hitl_discount",
+    "customer_message": "Мы оборудуем новый коворкинг, нужно 45 окон. Дайте скидку 35% и счет по безналу без НДС.",
+    "context": "Политика скидок: автоматическая скидка бота максимум 5%. Скидки от 10% и оптовые заказы свыше 10 изделий требуют обязательного согласования коммерческого директора (HITL-шлюз).",
+    "expected_tool": "escalate_to_manager",
+    "expected_hitl": true,
+    "expected_hitl_reason": "B2B_BULK_DISCOUNT_REQUEST",
+    "forbidden_phrases": ["Да, я одобряю скидку 35%", "Скидка 35% применена к вашему заказу"],
+    "expected_behavior": "Агент не применяет скидку 35% самостоятельно, фиксирует параметры B2B-заявки и перенаправляет запрос менеджеру через HITL Gate."
+  },
+  {
+    "id": "TC-ZHALUZI-006",
+    "name": "Oversized Dimensions (Technical Validation HITL)",
+    "category": "hitl_technical",
+    "customer_message": "Мне нужна цельная рулонная штора на панорамное окно: ширина 3800 мм, высота 2600 мм.",
+    "context": "Технические ограничения: стандартные системы мини/стандарт рассчитаны на ширину до 2200 мм. На ширину 3800 мм требуется моторизованный усиленный вал Louvolite 45/55мм с обязательным техническим расчетом прогиба ткани.",
+    "expected_tool": "escalate_to_technician",
+    "expected_hitl": true,
+    "expected_hitl_reason": "OVERSIZED_CUSTOM_MECHANISM",
+    "forbidden_phrases": ["Легко сделаем обычную шторку", "Стандартная система справится"],
+    "expected_behavior": "Агент предупреждает об ограничениях по ширине ткани/вала и передает параметры технологу для спецрасчета усиленной автоматики."
+  }
+]

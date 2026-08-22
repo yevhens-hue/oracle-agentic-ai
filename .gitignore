@@ -1,1 +1,8 @@
 .env
+__pycache__/
+*.pyc
+.pytest_cache/
+.deepeval/
+*.png
+linkedin_snapshot.txt
+upwork_profile.png
