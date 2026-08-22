@@ -239,3 +239,21 @@ async def run_competitive_intelligence_endpoint(payload: CompIntelRequest):
             detail=f"Competitive Intelligence Agent error: {str(e)}"
         )
 
+
+from api.advertools_analyzer import AdvertoolsAuditRequest, AdvertoolsAuditResponse, audit_publisher_domain
+
+@app.post("/api/v1/seo/advertools-audit", response_model=AdvertoolsAuditResponse, tags=["SEO & Advertools Audit"])
+def advertools_audit_endpoint(payload: AdvertoolsAuditRequest):
+    """
+    Real-time Advertools SEO & AI Bot Crawler Audit.
+    Verifies domain robots.txt permissions for GPTBot, PerplexityBot, ClaudeBot, and Google-Extended.
+    """
+    try:
+        return audit_publisher_domain(payload.domain_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Advertools audit error: {str(e)}"
+        )
+
+

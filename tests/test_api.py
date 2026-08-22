@@ -205,3 +205,22 @@ def test_competitive_intelligence_endpoint():
     assert "quadrantChart" in data["mermaid_quadrant_chart"]
     assert "Executive Competitive Intelligence Briefing" in data["executive_summary"]
 
+
+def test_advertools_audit_endpoint():
+    """Verify POST /api/v1/seo/advertools-audit performs robots.txt & AI crawler audit."""
+    payload = {
+        "domain_url": "https://www.adsy.com",
+        "check_ai_bots": True,
+        "extract_keywords": True
+    }
+    response = client.post("/api/v1/seo/advertools-audit", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["domain"] == "www.adsy.com"
+    assert "gpt_bot" in data["ai_bot_permissions"]
+    assert "perplexity_bot" in data["ai_bot_permissions"]
+    assert data["seo_health_score"] >= 0.0
+    assert len(data["top_keywords"]) > 0
+    assert len(data["recommendations"]) > 0
+
+
