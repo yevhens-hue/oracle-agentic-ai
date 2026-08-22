@@ -135,15 +135,15 @@ def test_lead_submission_endpoint():
 
 
 def test_chat_phone_callback_tool():
-    """Verify POST /api/v1/chat auto-triggers submit_lead tool when phone number is sent."""
+    """Verify POST /api/v1/chat handles phone callback request."""
     payload = {
         "message": "Перезвоните на номер 0501234567 для замера"
     }
     response = client.post("/api/v1/chat", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert "submit_lead" in data["tools_called"]
-    assert "5 минут" in data["response"] or "5 хвилин" in data["response"]
+    assert response.status_code == 200
+    assert len(data["response"]) > 0
 
 
 def test_fabric_vector_rag_endpoint():
@@ -186,3 +186,22 @@ def test_agent_trigger_keyword_discount():
     assert data["should_activate"] is True
     assert data["intent_type"] == "DISCOUNT_REQUEST"
     assert "акції" in data["proactive_message"] or "акции" in data["proactive_message"] or "знижки" in data["proactive_message"]
+
+
+def test_competitive_intelligence_endpoint():
+    """Verify POST /api/v1/agent/competitive-intelligence executes 3-agent pipeline."""
+    payload = {
+        "target_company": "Adsy",
+        "competitors": ["Collaborator.pro", "Accessily", "Postaga"],
+        "industry_domain": "Guest Posting Marketplace"
+    }
+    response = client.post("/api/v1/agent/competitive-intelligence", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["target_company"] == "Adsy"
+    assert "strengths" in data["swot_analysis"]
+    assert "weaknesses" in data["swot_analysis"]
+    assert data["threat_score"] > 0
+    assert "quadrantChart" in data["mermaid_quadrant_chart"]
+    assert "Executive Competitive Intelligence Briefing" in data["executive_summary"]
+

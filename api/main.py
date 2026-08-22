@@ -220,3 +220,22 @@ def evaluate_trigger_endpoint(payload: TriggerRequest):
         suggested_actions=trigger_data.get("suggested_actions", []),
         priority=trigger_data.get("priority", "P2_MEDIUM")
     )
+
+
+from api.competitive_intelligence import CompIntelRequest, CompIntelResponse, run_competitive_intelligence_pipeline
+
+@app.post("/api/v1/agent/competitive-intelligence", response_model=CompIntelResponse, tags=["Competitive Intelligence Multi-Agent"])
+async def run_competitive_intelligence_endpoint(payload: CompIntelRequest):
+    """
+    Multi-Agent Competitive Intelligence Workflow (BrightData Pattern).
+    Executes Researcher Agent -> Analyst Agent (SWOT & Threat Score) -> Writer Agent (Mermaid & Executive Briefing).
+    """
+    try:
+        response = await run_competitive_intelligence_pipeline(payload)
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Competitive Intelligence Agent error: {str(e)}"
+        )
+
