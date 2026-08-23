@@ -1,41 +1,27 @@
 'use client';
 
 import React, { useState } from 'react';
-import CompetitiveIntelForm from '@/components/CompetitiveIntelForm';
-import ThreatScoreGauge from '@/components/ThreatScoreGauge';
-import SwotMatrix from '@/components/SwotMatrix';
-import FeatureComparisonTable from '@/components/FeatureComparisonTable';
+import GptResearcherPanel from '@/components/GptResearcherPanel';
+import CrewAiPanel from '@/components/CrewAiPanel';
+import FirecrawlPanel from '@/components/FirecrawlPanel';
+import Crawl4AiPanel from '@/components/Crawl4AiPanel';
+import CompetitorTrackerPanel from '@/components/CompetitorTrackerPanel';
 import GeoAuditBadges from '@/components/GeoAuditBadges';
-import { CompIntelReport } from '@/lib/agents/competitiveIntel';
-import { FileText, Cpu, CheckCircle } from 'lucide-react';
+import { performAdvertoolsAudit } from '@/lib/agents/advertoolsAudit';
+import { Globe, Users, Flame, Cpu, Activity, ShieldCheck } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [report, setReport] = useState<CompIntelReport | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [dbSaved, setDbSaved] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'gpt' | 'crew' | 'firecrawl' | 'crawl4ai' | 'tracker' | 'geo'>('gpt');
+  const [defaultGeoAudit] = useState(() => performAdvertoolsAudit('https://www.adsy.com'));
 
-  const handleAnalyze = async (targetCompany: string, competitors: string[]) => {
-    setIsLoading(true);
-    setDbSaved(null);
-    try {
-      const res = await fetch('/api/research/competitive-intel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetCompany, competitors }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setReport(json.data);
-        if (json.dbId) {
-          setDbSaved(json.dbId);
-        }
-      }
-    } catch (err) {
-      console.error('Analysis error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const tabs = [
+    { id: 'gpt', label: 'GPT-Researcher (★17k+)', icon: Globe, badge: 'R&D Reports' },
+    { id: 'crew', label: 'CrewAI Intel Workflow', icon: Users, badge: 'SWOT & Matrix' },
+    { id: 'firecrawl', label: 'Firecrawl Scraper (★20k+)', icon: Flame, badge: 'Pricing & Markdown' },
+    { id: 'crawl4ai', label: 'Crawl4AI RAG Scraper (★25k+)', icon: Cpu, badge: 'Vector Chunks' },
+    { id: 'tracker', label: 'Competitor Tracker', icon: Activity, badge: 'Live Change Log' },
+    { id: 'geo', label: '8-Bot GEO Audit', icon: ShieldCheck, badge: 'robots.txt & Schema' },
+  ];
 
   return (
     <div className="space-y-8">
@@ -44,61 +30,45 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-black text-white tracking-tight">
           Competitive Intelligence & GEO Platform
         </h1>
-        <p className="text-sm text-gray-400 max-w-3xl">
-          Multi-agent competitive benchmarking, 8-AI bot crawler permission auditing, and Generative Engine Optimization (GEO) readiness suite.
+        <p className="text-sm text-gray-400 max-w-4xl">
+          Все 5 ведущих фреймворков для автономных R&D исследований, парсинга ценников, векторизации и трекинга конкурентов в едином интерфейсе.
         </p>
       </div>
 
-      {/* Form Launcher */}
-      <CompetitiveIntelForm onAnalyze={handleAnalyze} isLoading={isLoading} />
+      {/* Tabs Navigation Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-800">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 border border-sky-500/40 text-white shadow-lg'
+                  : 'bg-dark-800/60 border border-gray-800 text-gray-400 hover:text-white hover:bg-gray-800/40'
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-sky-400' : 'text-gray-400'}`} />
+              <span>{tab.label}</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${isActive ? 'bg-sky-500/20 text-sky-300' : 'bg-gray-800 text-gray-400'}`}>
+                {tab.badge}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-      {/* DB Saved Alert */}
-      {dbSaved && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" />
-            <span>Analysis report successfully persisted to Prisma database (Record ID: <code className="font-mono">{dbSaved}</code>)</span>
-          </div>
-        </div>
-      )}
-
-      {/* Analysis Results Display */}
-      {report && (
-        <div className="space-y-8 pt-4">
-          {/* Top Summary Bar & Threat Gauge */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 p-6 rounded-2xl bg-dark-800/80 border border-gray-800 backdrop-blur-sm space-y-4">
-              <div className="flex items-center gap-2 text-sky-400 font-bold text-sm uppercase tracking-wider">
-                <FileText className="w-4 h-4" />
-                Executive Briefing — {report.targetCompany}
-              </div>
-              <pre className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap font-sans bg-dark-900/60 p-4 rounded-xl border border-gray-800/80">
-                {report.executiveSummary}
-              </pre>
-            </div>
-
-            <ThreatScoreGauge score={report.threatScore} />
-          </div>
-
-          {/* 8-Bot & Schema.org Audit */}
-          <GeoAuditBadges audit={report.geoAudit} />
-
-          {/* SWOT Matrix */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-indigo-400" />
-              Strategic SWOT Analysis
-            </h2>
-            <SwotMatrix swot={report.swotAnalysis} />
-          </div>
-
-          {/* Feature Matrix */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">Competitor Feature Benchmark Matrix</h2>
-            <FeatureComparisonTable matrix={report.featureMatrix} targetCompany={report.targetCompany} />
-          </div>
-        </div>
-      )}
+      {/* Active Tab View */}
+      <div className="pt-2">
+        {activeTab === 'gpt' && <GptResearcherPanel />}
+        {activeTab === 'crew' && <CrewAiPanel />}
+        {activeTab === 'firecrawl' && <FirecrawlPanel />}
+        {activeTab === 'crawl4ai' && <Crawl4AiPanel />}
+        {activeTab === 'tracker' && <CompetitorTrackerPanel />}
+        {activeTab === 'geo' && <GeoAuditBadges audit={defaultGeoAudit} />}
+      </div>
     </div>
   );
 }

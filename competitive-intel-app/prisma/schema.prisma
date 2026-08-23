@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -29,5 +29,35 @@ model DomainAudit {
   pbnSpamRiskScore      Float
   aiBotsStatus          String   // JSON string
   schemaTypes           String   // JSON string
+  createdAt             DateTime @default(now())
+}
+
+model CompetitorTrack {
+  id                    String   @id @default(uuid())
+  competitor            String
+  changeType            String   // 'pricing_update', 'positioning_shift', 'feature_release'
+  title                 String
+  description           String
+  riskLevel             String   // 'Low', 'Medium', 'High', 'Critical'
+  pricingData           String?  // JSON string
+  createdAt             DateTime @default(now())
+}
+
+model ScrapedContent {
+  id                    String   @id @default(uuid())
+  targetUrl             String
+  engine                String   // 'firecrawl' or 'crawl4ai'
+  contentMarkdown       String
+  structuredJson        String?  // JSON string
+  ragReadinessScore     Float?
+  createdAt             DateTime @default(now())
+}
+
+model GptResearchReport {
+  id                    String   @id @default(uuid())
+  topic                 String
+  reportMarkdown        String
+  sourcesCount          Int
+  citationSources       String   // JSON string
   createdAt             DateTime @default(now())
 }
