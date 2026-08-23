@@ -8,8 +8,9 @@ export async function POST(request: Request) {
     const targetUrl = body.targetUrl || body.target_url || 'https://collaborator.pro';
     const maxPages = body.maxPages || body.max_pages || 10;
     const extractStrategy = body.extractStrategy || body.extract_strategy || 'cosine_similarity';
+    const chunkSize = body.chunkSize || body.chunk_size || 512;
 
-    const result = performCrawl4AiScrape(targetUrl, maxPages, extractStrategy);
+    const result = performCrawl4AiScrape(targetUrl, maxPages, extractStrategy, chunkSize);
 
     try {
       await db.scrapedContent.create({
