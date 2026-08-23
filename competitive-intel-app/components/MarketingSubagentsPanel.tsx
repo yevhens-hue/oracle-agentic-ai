@@ -1,19 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers } from 'lucide-react';
-import { MARKETING_SUBAGENTS, MarketingSubagentRunResult } from '@/lib/agents/marketingSubagents';
+import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers, Play } from 'lucide-react';
+import { MARKETING_SUBAGENTS, MarketingSubagentRunResult, IndividualSubagentResult } from '@/lib/agents/marketingSubagents';
 
 export default function MarketingSubagentsPanel() {
   const [targetDomain, setTargetDomain] = useState('collaborator.pro');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'seo' | 'cro' | 'growth'>('all');
-  const [result, setResult] = useState<MarketingSubagentRunResult | null>(null);
+  const [suiteResult, setSuiteResult] = useState<MarketingSubagentRunResult | null>(null);
+  const [individualResult, setIndividualResult] = useState<IndividualSubagentResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [runningAgentId, setRunningAgentId] = useState<string | null>(null);
 
   const handleRunSuite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetDomain.trim()) return;
     setIsLoading(true);
+    setIndividualResult(null);
 
     try {
       const res = await fetch('/api/marketing/subagents', {
@@ -23,12 +26,33 @@ export default function MarketingSubagentsPanel() {
       });
       const json = await res.json();
       if (json.success) {
-        setResult(json.data);
+        setSuiteResult(json.data);
       }
     } catch (err) {
       console.error('Marketing subagents error:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRunSingleAgent = async (agentId: string) => {
+    if (!targetDomain.trim()) return;
+    setRunningAgentId(agentId);
+
+    try {
+      const res = await fetch('/api/marketing/subagents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetDomain, agentId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setIndividualResult(json.data);
+      }
+    } catch (err) {
+      console.error('Single agent error:', err);
+    } finally {
+      setRunningAgentId(null);
     }
   };
 
@@ -109,40 +133,88 @@ export default function MarketingSubagentsPanel() {
         </form>
       </div>
 
-      {/* Agents Catalog Grid */}
+      {/* Agents Catalog Grid with Individual 1-Click Launchers */}
       <div className="p-5 rounded-2xl bg-dark-800/80 border border-gray-800 space-y-3">
         <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider">
           <Layers className="w-4 h-4 text-indigo-400" />
-          Каталог Субагентов в Наборе ({filteredAgents.length} активных)
+          Каталог 18 Субагентов (Кликните для индивидуального запуска)
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {filteredAgents.map((agent) => (
-            <div key={agent.id} className="p-3.5 rounded-xl bg-dark-900 border border-gray-800/80 space-y-1 hover:border-gray-700 transition-colors">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-white">{agent.name}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
-                  agent.category === 'seo' ? 'bg-sky-500/20 text-sky-300' :
-                  agent.category === 'cro' ? 'bg-amber-500/20 text-amber-300' : 'bg-purple-500/20 text-purple-300'
-                }`}>
-                  {agent.category}
-                </span>
+            <div key={agent.id} className="p-3.5 rounded-xl bg-dark-900 border border-gray-800/80 space-y-2 hover:border-indigo-500/50 transition-all flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-white">{agent.name}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
+                    agent.category === 'seo' ? 'bg-sky-500/20 text-sky-300' :
+                    agent.category === 'cro' ? 'bg-amber-500/20 text-amber-300' : 'bg-purple-500/20 text-purple-300'
+                  }`}>
+                    {agent.category}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-snug">{agent.description}</p>
               </div>
-              <p className="text-[11px] text-gray-400 leading-snug">{agent.description}</p>
+
+              <button
+                onClick={() => handleRunSingleAgent(agent.id)}
+                disabled={runningAgentId === agent.id}
+                className="w-full py-1.5 px-3 rounded-lg bg-gray-800 hover:bg-indigo-600 text-gray-200 hover:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+              >
+                {runningAgentId === agent.id ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Запуск...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3 h-3 text-indigo-400 fill-indigo-400" />
+                    Запустить Агента
+                  </>
+                )}
+              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Results Dashboard */}
-      {result && (
+      {/* Individual Agent Single Result */}
+      {individualResult && (
+        <div className="p-5 rounded-2xl bg-indigo-950/30 border border-indigo-500/40 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-sm text-white flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              Отдельный Отчёт Субагента: <code className="font-mono text-indigo-300">{individualResult.agentName}</code>
+            </span>
+            <span className="text-xs font-mono text-emerald-400 font-bold">
+              Score: {individualResult.score}/100
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {individualResult.findings?.map((f, idx) => (
+              <div key={idx} className="p-3 rounded-xl bg-dark-900 border border-gray-800 text-xs flex items-center justify-between">
+                <span className="font-bold text-white">{f.title}</span>
+                <span className="text-gray-300">{f.detail}</span>
+              </div>
+            ))}
+          </div>
+
+          <pre className="text-xs font-mono bg-dark-950 p-4 rounded-xl border border-gray-800 text-gray-300 max-h-60 overflow-y-auto whitespace-pre-wrap">
+            {individualResult.deepAnalysisMarkdown}
+          </pre>
+        </div>
+      )}
+
+      {/* Full Suite Results Dashboard */}
+      {suiteResult && !individualResult && (
         <div className="space-y-6">
           {/* Score Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-5 rounded-xl bg-dark-800/80 border border-gray-800 space-y-1">
               <span className="text-xs text-gray-400 uppercase font-semibold">SEO & Technical Index</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-black font-mono text-sky-400">{result.seoScore}/100</span>
+                <span className="text-3xl font-black font-mono text-sky-400">{suiteResult.seoScore}/100</span>
                 <span className="text-xs text-emerald-400 font-semibold">High Health</span>
               </div>
             </div>
@@ -150,7 +222,7 @@ export default function MarketingSubagentsPanel() {
             <div className="p-5 rounded-xl bg-dark-800/80 border border-gray-800 space-y-1">
               <span className="text-xs text-gray-400 uppercase font-semibold">Conversion Funnel CRO</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-black font-mono text-amber-400">{result.croScore}/100</span>
+                <span className="text-3xl font-black font-mono text-amber-400">{suiteResult.croScore}/100</span>
                 <span className="text-xs text-amber-400 font-semibold">Moderate Friction</span>
               </div>
             </div>
@@ -158,7 +230,7 @@ export default function MarketingSubagentsPanel() {
             <div className="p-5 rounded-xl bg-dark-800/80 border border-gray-800 space-y-1">
               <span className="text-xs text-gray-400 uppercase font-semibold">Growth & ARPU Potential</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-3xl font-black font-mono text-purple-400">{result.growthPotentialScore}/100</span>
+                <span className="text-3xl font-black font-mono text-purple-400">{suiteResult.growthPotentialScore}/100</span>
                 <span className="text-xs text-emerald-400 font-semibold">Strong Upside</span>
               </div>
             </div>
@@ -172,7 +244,7 @@ export default function MarketingSubagentsPanel() {
             </div>
 
             <div className="space-y-3">
-              {result.funnelFrictionPoints?.map((item, idx) => (
+              {suiteResult.funnelFrictionPoints?.map((item, idx) => (
                 <div key={idx} className="p-4 rounded-xl bg-dark-900 border border-gray-800 flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <span className="font-bold text-xs text-white block">{item.step}</span>
@@ -195,7 +267,7 @@ export default function MarketingSubagentsPanel() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {result.executiveCmoRoadmap?.map((item, idx) => (
+              {suiteResult.executiveCmoRoadmap?.map((item, idx) => (
                 <div key={idx} className="p-4 rounded-xl bg-dark-900 border border-gray-800 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-indigo-400">{item.phase}</span>
