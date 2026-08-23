@@ -23,9 +23,47 @@ export interface AdvertoolsAuditResult {
   recommendations: string[];
 }
 
+export function generateRobotsTxtSnippet(domainUrl: string): string {
+  const domain = domainUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+
+  return `# robots.txt generated for ${domain} - GEO & AI Crawler Optimization 2026
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+# Allow 8 Major AI Search Engine Crawlers for GEO Citation Indexing
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: FacebookExternalHit
+Allow: /
+
+Sitemap: https://${domain}/sitemap.xml
+`;
+}
+
 export function performAdvertoolsAudit(domainUrl: string): AdvertoolsAuditResult {
   const domain = domainUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
-  
+
   const aiBotsStatus: AiBotStatus[] = [
     { bot_name: "GPTBot", user_agent: "GPTBot", allowed: true, impact_description: "Powers ChatGPT Web Search citations & OpenAI Knowledge Index" },
     { bot_name: "PerplexityBot", user_agent: "PerplexityBot", allowed: true, impact_description: "Powers Perplexity.ai real-time Answer Engine citations" },

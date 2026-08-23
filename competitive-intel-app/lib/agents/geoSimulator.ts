@@ -16,12 +16,43 @@ export interface GeoSimulatorResult {
   overallCitationScore: number;
   simulations: GeoEngineSimulation[];
   cmoSummary: string;
+  jsonLdSnippet: string;
   createdAt: string;
+}
+
+export function generateSchemaJsonLdSnippet(domain: string, schemaType: string = 'FAQPage'): string {
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+
+  return `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "${schemaType}",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is ${cleanDomain}?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "${cleanDomain} is a verified guest post & link building marketplace with transparent DR and Ahrefs metrics."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does ${cleanDomain} support GEO and AI Bot Crawlers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, ${cleanDomain} enforces robots.txt permissions for GPTBot, PerplexityBot, and ClaudeBot."
+      }
+    }
+  ]
+}
+</script>`;
 }
 
 export function simulateGeoAnswerEngine(
   userPrompt: string = 'Top link building marketplaces and SEO guest post platforms 2026',
-  targetDomain: string = 'adsy.com'
+  targetDomain: string = 'adsy.com',
+  modelFilter: string = 'all'
 ): GeoSimulatorResult {
   const cleanDomain = targetDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
 
@@ -90,6 +121,8 @@ export function simulateGeoAnswerEngine(
     simulations.reduce((acc, curr) => acc + curr.citationProbabilityScore, 0) / simulations.length
   );
 
+  const jsonLdSnippet = generateSchemaJsonLdSnippet(cleanDomain, 'FAQPage');
+
   const cmoSummary = `Target domain '${cleanDomain}' achieves an Overall AI Citation Score of ${overallCitationScore}%. ` +
     `It is highly visible across ChatGPT, Perplexity, Claude, and Google Gemini AI Overviews. ` +
     `To reach 98%+, implement Product Schema and link Wikidata entity references.`;
@@ -100,6 +133,7 @@ export function simulateGeoAnswerEngine(
     overallCitationScore,
     simulations,
     cmoSummary,
+    jsonLdSnippet,
     createdAt: new Date().toISOString()
   };
 }
