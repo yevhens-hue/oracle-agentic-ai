@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Globe, Search, Loader2, BookOpen, Layers, Sparkles } from 'lucide-react';
+import { Globe, Search, Loader2, BookOpen, Layers, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { GptResearchResult, runGptResearcher } from '@/lib/agents/gptResearcher';
 
 export default function GptResearcherPanel() {
   const [topic, setTopic] = useState('Анализ рынка линкбилдинг-платформ в США 2026: игроки, ценники, доли');
   const [depth, setDepth] = useState<'fast' | 'deep'>('deep');
+  const [format, setFormat] = useState<'Detailed Markdown' | 'Executive Summary' | 'SWOT Focus'>('Detailed Markdown');
+  const [language, setLanguage] = useState<'RU' | 'EN' | 'DE' | 'ES'>('RU');
   const [result, setResult] = useState<GptResearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,19 +20,18 @@ export default function GptResearcherPanel() {
       const res = await fetch('/api/research/gpt-researcher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: searchTopic, depth: searchDepth }),
+        body: JSON.stringify({ topic: searchTopic, depth: searchDepth, options: { format, language } }),
       });
       const json = await res.json();
       if (json.success) {
         setResult(json.data);
       } else {
-        // Fallback execution if server error
-        const fallback = await runGptResearcher(searchTopic, searchDepth);
+        const fallback = await runGptResearcher(searchTopic, searchDepth, { format, language });
         setResult(fallback);
       }
     } catch (err) {
       console.warn('GPT-Researcher API fallback:', err);
-      const fallback = await runGptResearcher(searchTopic, searchDepth);
+      const fallback = await runGptResearcher(searchTopic, searchDepth, { format, language });
       setResult(fallback);
     } finally {
       setIsLoading(false);
@@ -71,6 +72,42 @@ export default function GptResearcherPanel() {
               className="w-full px-4 py-2.5 rounded-xl bg-dark-900 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 text-sm"
               required
             />
+          </div>
+
+          {/* Detailed Config Options Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-dark-900/90 border border-gray-800">
+            <div>
+              <label className="block text-xs font-semibold text-sky-400 mb-1.5 uppercase flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Формат Итогового R&D Отчёта
+              </label>
+              <select
+                value={format}
+                onChange={(e) => setFormat(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-800 border border-gray-700 text-white text-xs font-semibold focus:outline-none focus:border-sky-500"
+              >
+                <option value="Detailed Markdown">Detailed Markdown (Полный Анализ)</option>
+                <option value="Executive Summary">Executive Summary (Выжимка для CEO)</option>
+                <option value="SWOT Focus">SWOT Focus (Матрица Сил и Угроз)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-sky-400 mb-1.5 uppercase flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" />
+                Язык Генерации Отчета
+              </label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-800 border border-gray-700 text-white text-xs font-semibold focus:outline-none focus:border-sky-500"
+              >
+                <option value="RU">Русский (RU)</option>
+                <option value="EN">English (EN)</option>
+                <option value="DE">Deutsch (DE)</option>
+                <option value="ES">Español (ES)</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -128,7 +165,7 @@ export default function GptResearcherPanel() {
           <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-500/30 flex items-center justify-between">
             <span className="text-xs text-sky-300 font-semibold flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-sky-400" />
-              Отсканировано web-источников: <strong className="text-white font-mono">{result.sourcesCount}</strong>
+              Отсканировано web-источников: <strong className="text-white font-mono">{result.sourcesCount}</strong> | Формат: <strong className="text-white font-mono">{format}</strong> | Язык: <strong className="text-white font-mono">{language}</strong>
             </span>
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">
               {result.reportMarkdown.includes('quadrantChart') ? 'DEEP SCAN (20 SOURCES & MERMAID)' : 'FAST SCAN (5 SOURCES)'}

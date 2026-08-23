@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers, Play, Check } from 'lucide-react';
+import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers, Play, SlidersHorizontal, Users } from 'lucide-react';
 import { MARKETING_SUBAGENTS, MarketingSubagentRunResult, IndividualSubagentResult, runIndividualMarketingSubagent, runMarketingSubagentsSuite } from '@/lib/agents/marketingSubagents';
 
 export default function MarketingSubagentsPanel() {
   const [targetDomain, setTargetDomain] = useState('collaborator.pro');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'seo' | 'cro' | 'growth'>('all');
+  const [persona, setPersona] = useState<'SMB Agency' | 'B2B Enterprise' | 'Direct-to-Consumer (D2C)'>('SMB Agency');
+  const [executionMode, setExecutionMode] = useState<'parallel' | 'sequential'>('parallel');
+
   const [suiteResult, setSuiteResult] = useState<MarketingSubagentRunResult | null>(null);
   const [individualResult, setIndividualResult] = useState<IndividualSubagentResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,18 +27,18 @@ export default function MarketingSubagentsPanel() {
       const res = await fetch('/api/marketing/subagents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetDomain, category: selectedCategory }),
+        body: JSON.stringify({ targetDomain, category: selectedCategory, options: { persona, executionMode } }),
       });
       const json = await res.json();
       if (json.success && !json.isIndividual) {
         setSuiteResult(json.data);
       } else {
-        const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory);
+        const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory, { persona, executionMode });
         setSuiteResult(fallback);
       }
     } catch (err) {
       console.warn('Suite fallback execution:', err);
-      const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory);
+      const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory, { persona, executionMode });
       setSuiteResult(fallback);
     } finally {
       setIsLoading(false);
@@ -101,6 +104,40 @@ export default function MarketingSubagentsPanel() {
             />
           </div>
 
+          {/* Config Controls Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-dark-900/90 border border-gray-800">
+            <div>
+              <label className="block text-xs font-semibold text-indigo-400 mb-1.5 uppercase flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" />
+                Целевая Персона / Сегмент Аудитории (Persona)
+              </label>
+              <select
+                value={persona}
+                onChange={(e) => setPersona(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-800 border border-gray-700 text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+              >
+                <option value="SMB Agency">SMB Agency (Агентства малого бизнеса)</option>
+                <option value="B2B Enterprise">B2B Enterprise (Крупные корпораты)</option>
+                <option value="Direct-to-Consumer (D2C)">Direct-to-Consumer (D2C Бренд)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-indigo-400 mb-1.5 uppercase flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Режим Выполнения Субагентов
+              </label>
+              <select
+                value={executionMode}
+                onChange={(e) => setExecutionMode(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-lg bg-dark-800 border border-gray-700 text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+              >
+                <option value="parallel">Parallel Fast Batch (Параллельный быстрый)</option>
+                <option value="sequential">Sequential Deep (Последовательный глубокий)</option>
+              </select>
+            </div>
+          </div>
+
           {/* Category Filter */}
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase">Кластер Субагентов</label>
@@ -135,7 +172,7 @@ export default function MarketingSubagentsPanel() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Запуск {filteredAgents.length} маркетинговых субагентов...
+                Запуск {filteredAgents.length} маркетинговых субагентов ({executionMode})...
               </>
             ) : (
               <>

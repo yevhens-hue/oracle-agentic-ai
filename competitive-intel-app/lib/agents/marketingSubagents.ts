@@ -85,6 +85,11 @@ Apply findings from **${agentDef.name}** into the global 90-day executive CMO ro
   };
 }
 
+export interface MarketingSubagentRunOptions {
+  persona?: 'B2B Enterprise' | 'SMB Agency' | 'Direct-to-Consumer (D2C)';
+  executionMode?: 'parallel' | 'sequential';
+}
+
 export interface MarketingSubagentRunResult {
   targetDomain: string;
   selectedCategory: string;
@@ -101,9 +106,12 @@ export interface MarketingSubagentRunResult {
 
 export function runMarketingSubagentsSuite(
   targetDomain: string,
-  category: string = 'all'
+  category: string = 'all',
+  options?: MarketingSubagentRunOptions
 ): MarketingSubagentRunResult {
   const cleanDomain = targetDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+  const persona = options?.persona || 'SMB Agency';
+  const executionMode = options?.executionMode || 'parallel';
 
   const seoScore = 88;
   const croScore = 76;
@@ -131,7 +139,8 @@ export function runMarketingSubagentsSuite(
 
   const rawMarkdownReport = `# 18 Marketing Subagents Suite Report: ${cleanDomain}
 
-*Powered by everything-claude-marketing Framework (18 Specialized Subagents)*
+*Powered by everything-claude-marketing Framework (18 Specialized Subagents)*  
+*Target Persona:* **${persona}** | *Execution Mode:* **${executionMode.toUpperCase()}**
 
 ---
 
