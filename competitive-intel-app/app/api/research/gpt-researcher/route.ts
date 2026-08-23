@@ -6,12 +6,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const topic = body.topic || body.queryTopic || 'Анализ рынка линкбилдинг-платформ в США 2026: игроки, ценники, доли';
+    const depth = body.depth || 'deep';
 
-    const result = await runGptResearcher(topic);
+    const result = await runGptResearcher(topic, depth);
 
-    let savedRecord = null;
     try {
-      savedRecord = await db.gptResearchReport.create({
+      await db.gptResearchReport.create({
         data: {
           topic: result.topic,
           reportMarkdown: result.reportMarkdown,
@@ -19,18 +19,14 @@ export async function POST(request: Request) {
           citationSources: JSON.stringify(result.citationSources)
         }
       });
-    } catch (err) {
-      console.warn("DB save warning:", err);
+    } catch (dbErr) {
+      console.warn("DB save warning:", dbErr);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-      dbId: savedRecord?.id || null
-    });
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message || 'GPT-Researcher execution failed' },
+      { success: false, error: error.message || 'GPT-Researcher analysis failed' },
       { status: 500 }
     );
   }

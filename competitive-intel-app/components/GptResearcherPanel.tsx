@@ -1,24 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Loader2, FileText, Globe, ExternalLink } from 'lucide-react';
+import { Globe, Search, Loader2, BookOpen, Layers } from 'lucide-react';
 import { GptResearchResult } from '@/lib/agents/gptResearcher';
 
 export default function GptResearcherPanel() {
   const [topic, setTopic] = useState('Анализ рынка линкбилдинг-платформ в США 2026: игроки, ценники, доли');
+  const [depth, setDepth] = useState<'fast' | 'deep'>('deep');
   const [result, setResult] = useState<GptResearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleResearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topic.trim()) return;
-    setIsLoading(true);
 
+    setIsLoading(true);
     try {
       const res = await fetch('/api/research/gpt-researcher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topic, depth }),
       });
       const json = await res.json();
       if (json.success) {
@@ -33,13 +34,13 @@ export default function GptResearcherPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="p-6 rounded-2xl bg-dark-800/80 border border-gray-800 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="p-6 rounded-2xl bg-dark-800/80 border border-gray-800 backdrop-blur-md space-y-4 shadow-2xl">
+        <div className="flex items-center gap-2">
           <Globe className="w-5 h-5 text-sky-400" />
           <h2 className="text-lg font-bold text-white">GPT-Researcher Engine (assafelovic/gpt-researcher ★ 17k+)</h2>
         </div>
-        <p className="text-xs text-gray-400 mb-4">
-          Автономный AI-агент сканирует 20+ веб-источников, собирает данные рынка и генерирует структурированный R&D отчет с цитатами.
+        <p className="text-xs text-gray-400">
+          Автономный AI-агент сканирует веб-источники, собирает данные рынка, позиционирование конкурентов и генерирует структурированный R&D отчет с цитатами.
         </p>
 
         <form onSubmit={handleResearch} className="space-y-4">
@@ -57,6 +58,30 @@ export default function GptResearcherPanel() {
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase">Глубина Веб-Сканирования Источников</label>
+            <div className="flex rounded-xl bg-dark-900 p-1 border border-gray-800">
+              <button
+                type="button"
+                onClick={() => setDepth('fast')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  depth === 'fast' ? 'bg-sky-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Fast Scan (5 Источников)
+              </button>
+              <button
+                type="button"
+                onClick={() => setDepth('deep')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  depth === 'deep' ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Deep R&D Scan (20+ Источников & Mermaid Диаграмма)
+              </button>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={isLoading}
@@ -65,12 +90,12 @@ export default function GptResearcherPanel() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Сканирование 20+ источников и генерация отчета...
+                Сканирование источников и генерация R&D отчета...
               </>
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                Сгенерировать R&D Отчет GPT-Researcher
+                Сгенерировать R&D Отчет GPT-Researcher ({depth === 'deep' ? '20 Sources' : '5 Sources'})
               </>
             )}
           </button>
@@ -78,37 +103,23 @@ export default function GptResearcherPanel() {
       </div>
 
       {result && (
-        <div className="p-6 rounded-2xl bg-dark-800/80 border border-gray-800 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sky-400 font-bold text-sm">
-              <FileText className="w-4 h-4" />
-              Отчет GPT-Researcher: {result.topic}
-            </div>
-            <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-              {result.sourcesCount} Источников Просканировано
+        <div className="space-y-6">
+          <div className="p-4 rounded-xl bg-sky-950/30 border border-sky-500/30 flex items-center justify-between">
+            <span className="text-xs text-sky-300 font-semibold flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-sky-400" />
+              Отсканировано web-источников: <strong className="text-white font-mono">{result.sourcesCount}</strong>
             </span>
+            <span className="text-xs text-gray-400 font-mono">Глубина: {result.reportMarkdown.includes('quadrantChart') ? 'DEEP SCAN' : 'FAST SCAN'}</span>
           </div>
 
-          <pre className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap font-sans bg-dark-900/80 p-5 rounded-xl border border-gray-800 overflow-x-auto">
-            {result.reportMarkdown}
-          </pre>
-
-          {/* Citations List */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Проверенные Источники & Цитаты</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {result.citationSources?.map((src, idx) => (
-                <div key={idx} className="p-3 rounded-lg bg-dark-900 border border-gray-800 text-xs space-y-1">
-                  <div className="font-semibold text-white flex items-center justify-between">
-                    <span>{src.title}</span>
-                    <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                  <p className="text-[11px] text-gray-400 italic">"{src.snippet}"</p>
-                </div>
-              ))}
-            </div>
+          <div className="p-6 rounded-2xl bg-dark-800/90 border border-gray-800 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-sky-400" />
+              Структурированный R&D Отчет
+            </h3>
+            <pre className="text-xs font-mono bg-dark-950 p-5 rounded-xl border border-gray-800 text-gray-200 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[600px] overflow-y-auto">
+              {result.reportMarkdown}
+            </pre>
           </div>
         </div>
       )}
