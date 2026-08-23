@@ -1,0 +1,33 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Report {
+  id                    String   @id @default(uuid())
+  targetCompany         String
+  threatScore           Float
+  industryDomain        String
+  executiveSummary      String
+  swotAnalysis          String   // JSON string
+  featureMatrix         String   // JSON string
+  geoAudit              String?  // JSON string
+  mermaidChart          String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model DomainAudit {
+  id                    String   @id @default(uuid())
+  domain                String   @unique
+  seoHealthScore        Float
+  geoReadinessScore     Float
+  pbnSpamRiskScore      Float
+  aiBotsStatus          String   // JSON string
+  schemaTypes           String   // JSON string
+  createdAt             DateTime @default(now())
+}
