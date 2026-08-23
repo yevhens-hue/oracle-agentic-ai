@@ -6,12 +6,13 @@ import CrewAiPanel from '@/components/CrewAiPanel';
 import FirecrawlPanel from '@/components/FirecrawlPanel';
 import Crawl4AiPanel from '@/components/Crawl4AiPanel';
 import CompetitorTrackerPanel from '@/components/CompetitorTrackerPanel';
+import MarketingSubagentsPanel from '@/components/MarketingSubagentsPanel';
 import GeoAuditBadges from '@/components/GeoAuditBadges';
 import { performAdvertoolsAudit } from '@/lib/agents/advertoolsAudit';
-import { Globe, Users, Flame, Cpu, Activity, ShieldCheck } from 'lucide-react';
+import { Globe, Users, Flame, Cpu, Activity, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'gpt' | 'crew' | 'firecrawl' | 'crawl4ai' | 'tracker' | 'geo'>('gpt');
+  const [activeTab, setActiveTab] = useState<'gpt' | 'crew' | 'firecrawl' | 'crawl4ai' | 'tracker' | 'marketing' | 'geo'>('gpt');
   const [defaultGeoAudit] = useState(() => performAdvertoolsAudit('https://www.adsy.com'));
 
   const tabs = [
@@ -20,6 +21,7 @@ export default function DashboardPage() {
     { id: 'firecrawl', label: 'Firecrawl Scraper (★20k+)', icon: Flame, badge: 'Pricing & Markdown' },
     { id: 'crawl4ai', label: 'Crawl4AI RAG Scraper (★25k+)', icon: Cpu, badge: 'Vector Chunks' },
     { id: 'tracker', label: 'Competitor Tracker', icon: Activity, badge: 'Live Change Log' },
+    { id: 'marketing', label: '18 Marketing Subagents', icon: Sparkles, badge: 'everything-claude' },
     { id: 'geo', label: '8-Bot GEO Audit', icon: ShieldCheck, badge: 'robots.txt & Schema' },
   ];
 
@@ -31,7 +33,7 @@ export default function DashboardPage() {
           Competitive Intelligence & GEO Platform
         </h1>
         <p className="text-sm text-gray-400 max-w-4xl">
-          Все 5 ведущих фреймворков для автономных R&D исследований, парсинга ценников, векторизации и трекинга конкурентов в едином интерфейсе.
+          Все ведущие фреймворки для автономных R&D исследований, парсинга ценников, векторизации, трекинга конкурентов и 18 маркетинговых субагентов в едином интерфейсе.
         </p>
       </div>
 
@@ -67,6 +69,7 @@ export default function DashboardPage() {
         {activeTab === 'firecrawl' && <FirecrawlPanel />}
         {activeTab === 'crawl4ai' && <Crawl4AiPanel />}
         {activeTab === 'tracker' && <CompetitorTrackerPanel />}
+        {activeTab === 'marketing' && <MarketingSubagentsPanel />}
         {activeTab === 'geo' && <GeoAuditBadges audit={defaultGeoAudit} />}
       </div>
     </div>
