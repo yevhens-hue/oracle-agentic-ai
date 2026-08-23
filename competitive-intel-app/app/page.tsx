@@ -10,12 +10,13 @@ import MarketingSubagentsPanel from '@/components/MarketingSubagentsPanel';
 import GeoSimulatorPanel from '@/components/GeoSimulatorPanel';
 import NexscopePanel from '@/components/NexscopePanel';
 import WarRoomPanel from '@/components/WarRoomPanel';
+import AgentGovernancePanel from '@/components/AgentGovernancePanel';
 import GeoAuditBadges from '@/components/GeoAuditBadges';
 import { performAdvertoolsAudit } from '@/lib/agents/advertoolsAudit';
-import { Globe, Users, Flame, Cpu, Activity, ShieldCheck, Sparkles, Bot, Target, Swords } from 'lucide-react';
+import { Globe, Users, Flame, Cpu, Activity, ShieldCheck, Sparkles, Bot, Target, Swords, Key } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'gpt' | 'crew' | 'firecrawl' | 'crawl4ai' | 'tracker' | 'marketing' | 'geosim' | 'nexscope' | 'warroom' | 'geo'>('gpt');
+  const [activeTab, setActiveTab] = useState<'gpt' | 'crew' | 'firecrawl' | 'crawl4ai' | 'tracker' | 'marketing' | 'geosim' | 'nexscope' | 'warroom' | 'governance' | 'geo'>('gpt');
   const [defaultGeoAudit] = useState(() => performAdvertoolsAudit('https://www.adsy.com'));
 
   const tabs = [
@@ -28,6 +29,7 @@ export default function DashboardPage() {
     { id: 'geosim', label: 'GEO Answer Simulator', icon: Bot, badge: 'ChatGPT & Perplexity' },
     { id: 'nexscope', label: 'Nexscope Niche Skills', icon: Target, badge: 'nexscope-ai' },
     { id: 'warroom', label: 'AI War Room Simulator', icon: Swords, badge: 'Multi-Agent Debate' },
+    { id: 'governance', label: 'Agent Evals & Governance', icon: Key, badge: 'EDD & Safety' },
     { id: 'geo', label: '8-Bot GEO Audit', icon: ShieldCheck, badge: 'robots.txt & Schema' },
   ];
 
@@ -39,7 +41,7 @@ export default function DashboardPage() {
           Competitive Intelligence & GEO Platform
         </h1>
         <p className="text-sm text-gray-400 max-w-4xl">
-          Единый корпоративный комплекс для R&D исследований, парсинга ценников, векторизации, трекинга конкурентов, 18 маркетинговых субагентов, симуляции AI-поиска, валидации ниш Nexscope и AI War Room дебатов.
+          Единый корпоративный комплекс для R&D исследований, парсинга ценников, векторизации, трекинга конкурентов, 18 маркетинговых субагентов, симуляции AI-поиска, валидации ниш Nexscope, AI War Room дебатов и безопасности Agent Governance.
         </p>
       </div>
 
@@ -79,6 +81,7 @@ export default function DashboardPage() {
         {activeTab === 'geosim' && <GeoSimulatorPanel />}
         {activeTab === 'nexscope' && <NexscopePanel />}
         {activeTab === 'warroom' && <WarRoomPanel />}
+        {activeTab === 'governance' && <AgentGovernancePanel />}
         {activeTab === 'geo' && <GeoAuditBadges audit={defaultGeoAudit} />}
       </div>
     </div>
