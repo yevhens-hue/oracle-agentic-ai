@@ -6,3 +6,5 @@ __pycache__/
 *.png
 linkedin_snapshot.txt
 upwork_profile.png
+.venv/
+

@@ -240,20 +240,59 @@ async def run_competitive_intelligence_endpoint(payload: CompIntelRequest):
         )
 
 
-from api.advertools_analyzer import AdvertoolsAuditRequest, AdvertoolsAuditResponse, audit_publisher_domain
+from api.advertools_analyzer import AdvertoolsAuditRequest, AdvertoolsDeepAuditResponse, deep_audit_publisher_domain
 
-@app.post("/api/v1/seo/advertools-audit", response_model=AdvertoolsAuditResponse, tags=["SEO & Advertools Audit"])
+@app.post("/api/v1/seo/advertools-audit", response_model=AdvertoolsDeepAuditResponse, tags=["SEO & Advertools Audit"])
 def advertools_audit_endpoint(payload: AdvertoolsAuditRequest):
     """
-    Real-time Advertools SEO & AI Bot Crawler Audit.
-    Verifies domain robots.txt permissions for GPTBot, PerplexityBot, ClaudeBot, and Google-Extended.
+    Real-time Deep Advertools SEO, Schema.org & 8-AI Bot Crawler Audit.
+    Verifies domain robots.txt permissions for GPTBot, PerplexityBot, ClaudeBot, Google-Extended, ByteDance, etc.
     """
     try:
-        return audit_publisher_domain(payload.domain_url)
+        return deep_audit_publisher_domain(payload.domain_url)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Advertools audit error: {str(e)}"
+            detail=f"Advertools deep audit error: {str(e)}"
         )
 
 
+
+
+from api.firecrawl_scraper import FirecrawlScrapeRequest, FirecrawlScrapeResponse, firecrawl_scrape_competitor
+
+@app.post("/api/v1/research/firecrawl-scrape", response_model=FirecrawlScrapeResponse, tags=["Firecrawl LLM Scraping"])
+def firecrawl_scrape_endpoint(payload: FirecrawlScrapeRequest):
+    """
+    Firecrawl LLM Web Scraping & Monitoring Engine.
+    Converts heavy JavaScript competitor websites into clean Markdown, pricing tables, and product release signals.
+    """
+    try:
+        return firecrawl_scrape_competitor(payload.domain_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Firecrawl scrape error: {str(e)}"
+        )
+
+from api.crawl4ai_scraper import execute_crawl4ai_scrape, Crawl4AIScrapeResult
+
+from pydantic import BaseModel
+
+class Crawl4AIRequest(BaseModel):
+    target_url: str
+    max_pages: int = 10
+    extract_strategy: str = "cosine_similarity"
+
+@app.post("/api/v1/research/crawl4ai-scrape", tags=["Crawl4AI RAG Scraper"])
+def crawl4ai_scrape_endpoint(payload: Crawl4AIRequest):
+    """
+    Crawl4AI (unclecode/crawl4ai ★ 25k+) Ultra-Fast RAG Vector Scraper.
+    """
+    try:
+        return execute_crawl4ai_scrape(payload.target_url, payload.max_pages, payload.extract_strategy)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Crawl4AI scrape error: {str(e)}"
+        )

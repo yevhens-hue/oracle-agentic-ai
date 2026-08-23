@@ -207,7 +207,7 @@ def test_competitive_intelligence_endpoint():
 
 
 def test_advertools_audit_endpoint():
-    """Verify POST /api/v1/seo/advertools-audit performs robots.txt & AI crawler audit."""
+    """Verify POST /api/v1/seo/advertools-audit performs 8-bot robots.txt & Schema.org audit."""
     payload = {
         "domain_url": "https://www.adsy.com",
         "check_ai_bots": True,
@@ -217,10 +217,57 @@ def test_advertools_audit_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["domain"] == "www.adsy.com"
-    assert "gpt_bot" in data["ai_bot_permissions"]
-    assert "perplexity_bot" in data["ai_bot_permissions"]
+    assert len(data["ai_bots_status"]) == 8
     assert data["seo_health_score"] >= 0.0
+    assert data["geo_readiness_score"] >= 0.0
+    assert len(data["schema_types"]) > 0
     assert len(data["top_keywords"]) > 0
-    assert len(data["recommendations"]) > 0
+    assert "Branded Anchors (e.g. Adsy)" in data["anchor_ratio_recommendations"]
 
 
+
+
+
+def test_firecrawl_scrape_endpoint():
+    """Verify POST /api/v1/research/firecrawl-scrape returns clean Markdown & pricing signals."""
+    payload = {
+        "domain_url": "https://collaborator.pro",
+        "bypass_js": True,
+        "extract_pricing": True
+    }
+    response = client.post("/api/v1/research/firecrawl-scrape", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["domain"] == "collaborator.pro"
+    assert len(data["content_markdown"]) > 50
+    assert len(data["detected_pricing"]) > 0
+    assert len(data["release_signals"]) > 0
+    assert data["llm_context_token_estimate"] > 0
+
+
+def test_crawl4ai_scrape_endpoint():
+    response = client.post(
+        "/api/v1/research/crawl4ai-scrape",
+        json={"target_url": "https://collaborator.pro", "max_pages": 5, "extract_strategy": "cosine_similarity"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "domain" in data
+    assert data["domain"] == "collaborator.pro"
+    assert "semantic_chunks" in data
+    assert data["rag_vector_readiness_score"] > 90.0
+
+
+def test_firecrawl_all_modes_populated():
+    for mode in ["multi_page", "structured_json", "single_page", "geo_footprint"]:
+        response = client.post(
+            "/api/v1/research/firecrawl-scrape",
+            json={"domain_url": "https://collaborator.pro", "crawl_mode": mode}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["subpages_tree"]) > 0
+        assert len(data["content_markdown"]) > 50
+        assert data["structured_json"]["company_name"] != ""
+        assert len(data["detected_pricing"]) > 0
+        assert len(data["geo_citation_footprint"]) > 0
