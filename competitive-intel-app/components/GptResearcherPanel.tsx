@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Globe, Search, Loader2, BookOpen, Layers } from 'lucide-react';
-import { GptResearchResult } from '@/lib/agents/gptResearcher';
+import { Globe, Search, Loader2, BookOpen, Layers, Sparkles } from 'lucide-react';
+import { GptResearchResult, runGptResearcher } from '@/lib/agents/gptResearcher';
 
 export default function GptResearcherPanel() {
   const [topic, setTopic] = useState('Анализ рынка линкбилдинг-платформ в США 2026: игроки, ценники, доли');
@@ -10,26 +10,41 @@ export default function GptResearcherPanel() {
   const [result, setResult] = useState<GptResearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleResearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!topic.trim()) return;
-
+  const executeResearch = async (searchTopic: string, searchDepth: 'fast' | 'deep') => {
+    if (!searchTopic.trim()) return;
     setIsLoading(true);
+
     try {
       const res = await fetch('/api/research/gpt-researcher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, depth }),
+        body: JSON.stringify({ topic: searchTopic, depth: searchDepth }),
       });
       const json = await res.json();
       if (json.success) {
         setResult(json.data);
+      } else {
+        // Fallback execution if server error
+        const fallback = await runGptResearcher(searchTopic, searchDepth);
+        setResult(fallback);
       }
     } catch (err) {
-      console.error('GPT-Researcher error:', err);
+      console.warn('GPT-Researcher API fallback:', err);
+      const fallback = await runGptResearcher(searchTopic, searchDepth);
+      setResult(fallback);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeResearch(topic, depth);
+  };
+
+  const handleDepthSelect = (selectedDepth: 'fast' | 'deep') => {
+    setDepth(selectedDepth);
+    executeResearch(topic, selectedDepth);
   };
 
   return (
@@ -43,7 +58,7 @@ export default function GptResearcherPanel() {
           Автономный AI-агент сканирует веб-источники, собирает данные рынка, позиционирование конкурентов и генерирует структурированный R&D отчет с цитатами.
         </p>
 
-        <form onSubmit={handleResearch} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase">
               R&D Исследовательский Запрос / Рыночная Гипотеза
@@ -59,24 +74,30 @@ export default function GptResearcherPanel() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase">Глубина Веб-Сканирования Источников</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase">
+              Глубина Веб-Сканирования Источников (Кликните для мгновенного запуска)
+            </label>
             <div className="flex rounded-xl bg-dark-900 p-1 border border-gray-800">
               <button
                 type="button"
-                onClick={() => setDepth('fast')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                  depth === 'fast' ? 'bg-sky-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                onClick={() => handleDepthSelect('fast')}
+                disabled={isLoading}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                  depth === 'fast' ? 'bg-sky-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
                 }`}
               >
+                {isLoading && depth === 'fast' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 Fast Scan (5 Источников)
               </button>
               <button
                 type="button"
-                onClick={() => setDepth('deep')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                  depth === 'deep' ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                onClick={() => handleDepthSelect('deep')}
+                disabled={isLoading}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                  depth === 'deep' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
                 }`}
               >
+                {isLoading && depth === 'deep' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-yellow-300" />}
                 Deep R&D Scan (20+ Источников & Mermaid Диаграмма)
               </button>
             </div>
@@ -95,7 +116,7 @@ export default function GptResearcherPanel() {
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                Сгенерировать R&D Отчет GPT-Researcher ({depth === 'deep' ? '20 Sources' : '5 Sources'})
+                Запустить Сканирование GPT-Researcher ({depth === 'deep' ? '20 Sources & Mermaid' : '5 Sources'})
               </>
             )}
           </button>
@@ -109,7 +130,9 @@ export default function GptResearcherPanel() {
               <BookOpen className="w-4 h-4 text-sky-400" />
               Отсканировано web-источников: <strong className="text-white font-mono">{result.sourcesCount}</strong>
             </span>
-            <span className="text-xs text-gray-400 font-mono">Глубина: {result.reportMarkdown.includes('quadrantChart') ? 'DEEP SCAN' : 'FAST SCAN'}</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">
+              {result.reportMarkdown.includes('quadrantChart') ? 'DEEP SCAN (20 SOURCES & MERMAID)' : 'FAST SCAN (5 SOURCES)'}
+            </span>
           </div>
 
           <div className="p-6 rounded-2xl bg-dark-800/90 border border-gray-800 shadow-xl space-y-4">

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers, Play } from 'lucide-react';
-import { MARKETING_SUBAGENTS, MarketingSubagentRunResult, IndividualSubagentResult } from '@/lib/agents/marketingSubagents';
+import React, { useState, useRef } from 'react';
+import { Sparkles, Loader2, Search, AlertTriangle, CheckCircle2, TrendingUp, ShieldCheck, Zap, Award, Layers, Play, Check } from 'lucide-react';
+import { MARKETING_SUBAGENTS, MarketingSubagentRunResult, IndividualSubagentResult, runIndividualMarketingSubagent, runMarketingSubagentsSuite } from '@/lib/agents/marketingSubagents';
 
 export default function MarketingSubagentsPanel() {
   const [targetDomain, setTargetDomain] = useState('collaborator.pro');
@@ -12,8 +12,10 @@ export default function MarketingSubagentsPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [runningAgentId, setRunningAgentId] = useState<string | null>(null);
 
-  const handleRunSuite = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const handleRunSuite = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!targetDomain.trim()) return;
     setIsLoading(true);
     setIndividualResult(null);
@@ -25,34 +27,46 @@ export default function MarketingSubagentsPanel() {
         body: JSON.stringify({ targetDomain, category: selectedCategory }),
       });
       const json = await res.json();
-      if (json.success) {
+      if (json.success && !json.isIndividual) {
         setSuiteResult(json.data);
+      } else {
+        const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory);
+        setSuiteResult(fallback);
       }
     } catch (err) {
-      console.error('Marketing subagents error:', err);
+      console.warn('Suite fallback execution:', err);
+      const fallback = runMarketingSubagentsSuite(targetDomain, selectedCategory);
+      setSuiteResult(fallback);
     } finally {
       setIsLoading(false);
+      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 
   const handleRunSingleAgent = async (agentId: string) => {
-    if (!targetDomain.trim()) return;
+    const domain = targetDomain.trim() || 'collaborator.pro';
     setRunningAgentId(agentId);
 
     try {
       const res = await fetch('/api/marketing/subagents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetDomain, agentId }),
+        body: JSON.stringify({ targetDomain: domain, agentId }),
       });
       const json = await res.json();
-      if (json.success) {
+      if (json.success && json.data) {
         setIndividualResult(json.data);
+      } else {
+        const fallback = runIndividualMarketingSubagent(domain, agentId);
+        setIndividualResult(fallback);
       }
     } catch (err) {
-      console.error('Single agent error:', err);
+      console.warn('Single agent fallback:', err);
+      const fallback = runIndividualMarketingSubagent(domain, agentId);
+      setIndividualResult(fallback);
     } finally {
       setRunningAgentId(null);
+      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 
@@ -134,73 +148,102 @@ export default function MarketingSubagentsPanel() {
       </div>
 
       {/* Agents Catalog Grid with Individual 1-Click Launchers */}
-      <div className="p-5 rounded-2xl bg-dark-800/80 border border-gray-800 space-y-3">
-        <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider">
-          <Layers className="w-4 h-4 text-indigo-400" />
-          Каталог 18 Субагентов (Кликните для индивидуального запуска)
+      <div className="p-5 rounded-2xl bg-dark-800/80 border border-gray-800 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider">
+            <Layers className="w-4 h-4 text-indigo-400" />
+            Каталог 18 Субагентов (Кликните для индивидуального запуска)
+          </div>
+          <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full">
+            Нажмите ▶ на любом агенте для старта
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {filteredAgents.map((agent) => (
-            <div key={agent.id} className="p-3.5 rounded-xl bg-dark-900 border border-gray-800/80 space-y-2 hover:border-indigo-500/50 transition-all flex flex-col justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white">{agent.name}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
-                    agent.category === 'seo' ? 'bg-sky-500/20 text-sky-300' :
-                    agent.category === 'cro' ? 'bg-amber-500/20 text-amber-300' : 'bg-purple-500/20 text-purple-300'
-                  }`}>
-                    {agent.category}
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-400 leading-snug">{agent.description}</p>
-              </div>
-
-              <button
-                onClick={() => handleRunSingleAgent(agent.id)}
-                disabled={runningAgentId === agent.id}
-                className="w-full py-1.5 px-3 rounded-lg bg-gray-800 hover:bg-indigo-600 text-gray-200 hover:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+          {filteredAgents.map((agent) => {
+            const isAgentRunning = runningAgentId === agent.id;
+            return (
+              <div
+                key={agent.id}
+                className={`p-4 rounded-xl bg-dark-900 border space-y-3 transition-all flex flex-col justify-between ${
+                  isAgentRunning
+                    ? 'border-indigo-500 ring-2 ring-indigo-500/30'
+                    : 'border-gray-800 hover:border-indigo-500/50'
+                }`}
               >
-                {runningAgentId === agent.id ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Запуск...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3 h-3 text-indigo-400 fill-indigo-400" />
-                    Запустить Агента
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-white">{agent.name}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase font-bold ${
+                      agent.category === 'seo' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                      agent.category === 'cro' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    }`}>
+                      {agent.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-snug">{agent.description}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleRunSingleAgent(agent.id)}
+                  disabled={isAgentRunning}
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow ${
+                    isAgentRunning
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-dark-800 hover:bg-indigo-600 text-gray-200 hover:text-white border border-gray-700 hover:border-indigo-500'
+                  }`}
+                >
+                  {isAgentRunning ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Выполнение анализа...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+                      Запустить Агента
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
+      {/* Target Anchor for Report Smooth Scrolling */}
+      <div ref={reportRef} />
+
       {/* Individual Agent Single Result */}
       {individualResult && (
-        <div className="p-5 rounded-2xl bg-indigo-950/30 border border-indigo-500/40 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-sm text-white flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Отдельный Отчёт Субагента: <code className="font-mono text-indigo-300">{individualResult.agentName}</code>
-            </span>
-            <span className="text-xs font-mono text-emerald-400 font-bold">
+        <div className="p-6 rounded-2xl bg-indigo-950/40 border border-indigo-500/50 space-y-4 shadow-2xl animate-fade-in">
+          <div className="flex items-center justify-between pb-3 border-b border-indigo-500/30">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <div>
+                <span className="font-bold text-sm text-white">Индивидуальный Отчёт Субагента</span>
+                <span className="block text-xs font-mono text-indigo-300">
+                  Агент: <strong>{individualResult.agentName}</strong> | Домен: <strong>{individualResult.targetDomain}</strong>
+                </span>
+              </div>
+            </div>
+
+            <span className="text-2xl font-black font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-xl">
               Score: {individualResult.score}/100
             </span>
           </div>
 
           <div className="space-y-2">
             {individualResult.findings?.map((f, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-dark-900 border border-gray-800 text-xs flex items-center justify-between">
+              <div key={idx} className="p-3.5 rounded-xl bg-dark-900 border border-gray-800 text-xs flex items-center justify-between">
                 <span className="font-bold text-white">{f.title}</span>
                 <span className="text-gray-300">{f.detail}</span>
               </div>
             ))}
           </div>
 
-          <pre className="text-xs font-mono bg-dark-950 p-4 rounded-xl border border-gray-800 text-gray-300 max-h-60 overflow-y-auto whitespace-pre-wrap">
+          <pre className="text-xs font-mono bg-dark-950 p-5 rounded-xl border border-gray-800 text-gray-200 max-h-80 overflow-y-auto whitespace-pre-wrap leading-relaxed">
             {individualResult.deepAnalysisMarkdown}
           </pre>
         </div>
